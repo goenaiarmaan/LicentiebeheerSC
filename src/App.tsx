@@ -5,6 +5,7 @@ import { sampleLicenses } from './data/sampleData';
 import Dashboard from './components/Dashboard';
 import LicenseTable from './components/LicenseTable';
 import LicenseForm from './components/LicenseForm';
+import ExportPanel from './components/ExportPanel';
 
 type ViewType = 'dashboard' | 'licenses';
 
@@ -14,6 +15,7 @@ function App() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingLicense, setEditingLicense] = useState<License | null>(null);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
 
   // Initialize with sample data if empty
   useEffect(() => {
@@ -132,18 +134,29 @@ function App() {
                   : 'Beheer en bewaak al uw licenties'}
               </p>
             </div>
-            <button
-              onClick={() => {
-                setEditingLicense(null);
-                setIsFormOpen(true);
-              }}
-              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm shadow-blue-200"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Licentie Toevoegen
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsExportOpen(true)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Exporteren
+              </button>
+              <button
+                onClick={() => {
+                  setEditingLicense(null);
+                  setIsFormOpen(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm shadow-blue-200"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Licentie Toevoegen
+              </button>
+            </div>
           </div>
         </header>
 
@@ -187,6 +200,7 @@ function App() {
               licenses={licenses}
               onEdit={handleEdit}
               onDelete={deleteLicense}
+              onExport={() => setIsExportOpen(true)}
             />
           )}
         </div>
@@ -198,6 +212,13 @@ function App() {
         onClose={handleCloseForm}
         onSave={handleSave}
         license={editingLicense}
+      />
+
+      {/* Export Panel */}
+      <ExportPanel
+        isOpen={isExportOpen}
+        onClose={() => setIsExportOpen(false)}
+        licenses={licenses}
       />
     </div>
   );

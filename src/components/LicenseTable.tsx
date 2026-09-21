@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { License, LicenseType } from '../types';
-import { formatDate, formatCurrencyShort, getDaysUntilExpiry, getLicenseTypeLabel, generateICS, downloadICS, generateAllICS, getCurrencySymbol } from '../utils/licenseUtils';
+import { formatDate, formatCurrencyShort, getDaysUntilExpiry, getLicenseTypeLabel, generateICS, downloadICS, generateAllICS } from '../utils/licenseUtils';
 
 interface LicenseTableProps {
   licenses: License[];
   onEdit: (license: License) => void;
   onDelete: (id: string) => void;
+  onExport?: () => void;
 }
 
-export default function LicenseTable({ licenses, onEdit, onDelete }: LicenseTableProps) {
+export default function LicenseTable({ licenses, onEdit, onDelete, onExport }: LicenseTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('alle');
   const [filterStatus, setFilterStatus] = useState<string>('alle');
@@ -145,16 +146,27 @@ export default function LicenseTable({ licenses, onEdit, onDelete }: LicenseTabl
               <option value="verlopen">Verlopen</option>
             </select>
           </div>
-          {/* Export Button */}
-          <button
-            onClick={handleExportAll}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors whitespace-nowrap"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            Exporteer naar Calendar
-          </button>
+          {/* Export Buttons */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExportAll}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Calendar
+            </button>
+            <button
+              onClick={onExport}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors whitespace-nowrap"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Exporteer
+            </button>
+          </div>
         </div>
       </div>
 
