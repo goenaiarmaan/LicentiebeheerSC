@@ -1,4 +1,4 @@
-import { License, LicenseStatus } from '../types';
+import { License, LicenseStatus, Currency } from '../types';
 
 export function calculateStatus(vervaldatum: string): LicenseStatus {
   const now = new Date();
@@ -27,11 +27,32 @@ export function formatDate(dateStr: string): string {
   });
 }
 
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('nl-NL', {
+export function formatCurrency(amount: number, currency: Currency = 'USD'): string {
+  if (currency === 'SRD') {
+    return new Intl.NumberFormat('nl-NL', {
+      style: 'currency',
+      currency: 'SRD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount).replace('SRD', 'SRD');
+  }
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'EUR',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(amount);
+}
+
+export function formatCurrencyShort(amount: number, currency: Currency): string {
+  if (currency === 'SRD') {
+    return `SRD ${amount.toLocaleString('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  return `$ ${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+export function getCurrencySymbol(currency: Currency): string {
+  return currency === 'SRD' ? 'SRD' : '$';
 }
 
 export function generateId(): string {
@@ -42,13 +63,15 @@ export function generateICS(license: License): string {
   const now = new Date();
   const expiry = new Date(license.vervaldatum);
   
-  // Reminder 30 days before
   const reminder = new Date(expiry);
   reminder.setDate(reminder.getDate() - 30);
 
   const formatDateForICS = (date: Date): string => {
     return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
   };
+
+  const currencyLabel = license.valuta === 'SRD' ? 'SRD' : 'USD';
+  const priceLabel = `${formatCurrencyShort(license.totaalPrijs, license.valuta)}`;
 
   const ics = `BEGIN:VCALENDAR
 VERSION:2.0
@@ -59,7 +82,7 @@ BEGIN:VEVENT
 DTSTART:${formatDateForICS(reminder)}T090000Z
 DTEND:${formatDateForICS(reminder)}T100000Z
 SUMMARY:Licentie verloopt: ${license.naam}
-DESCRIPTION:Type: ${license.type}\\nLeverancier: ${license.leverancier}\\nVervaldatum: ${formatDate(license.vervaldatum)}\\nKlant: ${license.klantNaam || 'N/A'}
+DESCRIPTION:Type: ${license.type}\\nLeverancier: ${license.leverancier}\\nVervaldatum: ${formatDate(license.vervaldatum)}\\nKlant: ${license.klantNaam || 'N/A'}\\nPrijs: ${priceLabel}
 STATUS:CONFIRMED
 BEGIN:VALARM
 TRIGGER:-P30D
@@ -78,8 +101,6 @@ END:VCALENDAR`;
 }
 
 export function generateAllICS(licenses: License[]): string {
-  const now = new Date();
-  
   const formatDateForICS = (date: Date): string => {
     return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
   };
@@ -90,11 +111,13 @@ export function generateAllICS(licenses: License[]): string {
     const reminder = new Date(expiry);
     reminder.setDate(reminder.getDate() - 30);
 
+    const priceLabel = formatCurrencyShort(license.totaalPrijs, license.valuta);
+
     events += `BEGIN:VEVENT
 DTSTART:${formatDateForICS(reminder)}T090000Z
 DTEND:${formatDateForICS(reminder)}T100000Z
 SUMMARY:Licentie verloopt: ${license.naam}
-DESCRIPTION:Type: ${license.type}\\nLeverancier: ${license.leverancier}\\nVervaldatum: ${formatDate(license.vervaldatum)}\\nKlant: ${license.klantNaam || 'N/A'}
+DESCRIPTION:Type: ${license.type}\\nLeverancier: ${license.leverancier}\\nVervaldatum: ${formatDate(license.vervaldatum)}\\nKlant: ${license.klantNaam || 'N/A'}\\nPrijs: ${priceLabel}
 STATUS:CONFIRMED
 BEGIN:VALARM
 TRIGGER:-P30D

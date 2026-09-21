@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { License, LicenseType } from '../types';
-import { formatDate, formatCurrency, getDaysUntilExpiry, getLicenseTypeLabel, generateICS, downloadICS, generateAllICS } from '../utils/licenseUtils';
+import { formatDate, formatCurrencyShort, getDaysUntilExpiry, getLicenseTypeLabel, generateICS, downloadICS, generateAllICS, getCurrencySymbol } from '../utils/licenseUtils';
 
 interface LicenseTableProps {
   licenses: License[];
@@ -97,6 +97,9 @@ export default function LicenseTable({ licenses, onEdit, onDelete }: LicenseTabl
     }
   };
 
+  const totaalSRD = filteredLicenses.filter(l => l.valuta === 'SRD').reduce((sum, l) => sum + l.totaalPrijs, 0);
+  const totaalUSD = filteredLicenses.filter(l => l.valuta === 'USD').reduce((sum, l) => sum + l.totaalPrijs, 0);
+
   return (
     <div className="space-y-4">
       {/* Filters */}
@@ -176,6 +179,9 @@ export default function LicenseTable({ licenses, onEdit, onDelete }: LicenseTabl
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onClick={() => handleSort('prijs')}>
                   Prijs {sortBy === 'prijs' && (sortOrder === 'asc' ? '↑' : '↓')}
                 </th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Valuta
+                </th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onClick={() => handleSort('vervaldatum')}>
                   Vervaldatum {sortBy === 'vervaldatum' && (sortOrder === 'asc' ? '↑' : '↓')}
                 </th>
@@ -210,9 +216,22 @@ export default function LicenseTable({ licenses, onEdit, onDelete }: LicenseTabl
                   </td>
                   <td className="px-4 py-3">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{formatCurrency(license.totaalPrijs)}</p>
-                      <p className="text-xs text-gray-500">{formatCurrency(license.prijsPerLicentie)}/st.</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {formatCurrencyShort(license.totaalPrijs, license.valuta)}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {formatCurrencyShort(license.prijsPerLicentie, license.valuta)}/st.
+                      </p>
                     </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
+                      license.valuta === 'SRD' 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-blue-100 text-blue-700'
+                    }`}>
+                      {license.valuta}
+                    </span>
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-sm text-gray-700">{formatDate(license.vervaldatum)}</span>
@@ -259,7 +278,7 @@ export default function LicenseTable({ licenses, onEdit, onDelete }: LicenseTabl
               ))}
               {filteredLicenses.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-gray-400">
+                  <td colSpan={9} className="px-4 py-12 text-center text-gray-400">
                     <svg className="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
@@ -271,13 +290,22 @@ export default function LicenseTable({ licenses, onEdit, onDelete }: LicenseTabl
           </table>
         </div>
         {/* Footer */}
-        <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+        <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <p className="text-xs text-gray-500">
             {filteredLicenses.length} van {licenses.length} licenties weergegeven
           </p>
-          <p className="text-xs text-gray-500">
-            Totaal: {formatCurrency(filteredLicenses.reduce((sum, l) => sum + l.totaalPrijs, 0))}
-          </p>
+          <div className="flex items-center gap-4">
+            {totaalSRD > 0 && (
+              <p className="text-xs font-semibold text-green-700">
+                SRD: {totaalSRD.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}
+              </p>
+            )}
+            {totaalUSD > 0 && (
+              <p className="text-xs font-semibold text-blue-700">
+                USD: ${totaalUSD.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>

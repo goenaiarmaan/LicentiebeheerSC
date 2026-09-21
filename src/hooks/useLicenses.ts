@@ -11,6 +11,7 @@ export function useLicenses() {
       if (stored) {
         return JSON.parse(stored).map((l: License) => ({
           ...l,
+          valuta: l.valuta || 'SRD', // Default to SRD for backward compatibility
           status: calculateStatus(l.vervaldatum),
         }));
       }

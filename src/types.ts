@@ -2,6 +2,8 @@ export type LicenseType = 'domein' | 'odoo' | 'windows' | 'office' | 'antivirus'
 
 export type LicenseStatus = 'actief' | 'verloopt_soon' | 'verlopen' | 'opgezegd';
 
+export type Currency = 'SRD' | 'USD';
+
 export interface License {
   id: string;
   naam: string;
@@ -10,6 +12,7 @@ export interface License {
   aantalLicenties: number;
   prijsPerLicentie: number;
   totaalPrijs: number;
+  valuta: Currency;
   aankoopDatum: string;
   vervaldatum: string;
   status: LicenseStatus;
@@ -21,7 +24,8 @@ export interface License {
 
 export interface DashboardStats {
   totaalLicenties: number;
-  totaalKosten: number;
+  totaalKostenSRD: number;
+  totaalKostenUSD: number;
   verlooptBinnen30Dagen: number;
   verlopen: number;
   actief: number;

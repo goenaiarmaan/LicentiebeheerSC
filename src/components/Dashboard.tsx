@@ -1,6 +1,6 @@
 import React from 'react';
 import { License } from '../types';
-import { formatCurrency } from '../utils/licenseUtils';
+import { formatCurrencyShort } from '../utils/licenseUtils';
 
 interface DashboardProps {
   licenses: License[];
@@ -11,12 +11,32 @@ export default function Dashboard({ licenses }: DashboardProps) {
   const actief = licenses.filter((l) => l.status === 'actief').length;
   const verlooptBinnenkort = licenses.filter((l) => l.status === 'verloopt_soon').length;
   const verlopen = licenses.filter((l) => l.status === 'verlopen').length;
-  const totaalKosten = licenses.reduce((sum, l) => sum + l.totaalPrijs, 0);
+  
+  const totaalSRD = licenses.filter((l) => l.valuta === 'SRD').reduce((sum, l) => sum + l.totaalPrijs, 0);
+  const totaalUSD = licenses.filter((l) => l.valuta === 'USD').reduce((sum, l) => sum + l.totaalPrijs, 0);
 
+  const kostenPerTypeSRD = licenses
+    .filter((l) => l.valuta === 'SRD')
+    .reduce((acc, l) => {
+      acc[l.type] = (acc[l.type] || 0) + l.totaalPrijs;
+      return acc;
+    }, {} as Record<string, number>);
+
+  const kostenPerTypeUSD = licenses
+    .filter((l) => l.valuta === 'USD')
+    .reduce((acc, l) => {
+      acc[l.type] = (acc[l.type] || 0) + l.totaalPrijs;
+      return acc;
+    }, {} as Record<string, number>);
+
+  // Combineer voor de grafiek
   const kostenPerType = licenses.reduce((acc, l) => {
-    acc[l.type] = (acc[l.type] || 0) + l.totaalPrijs;
+    const key = `${l.type}_${l.valuta}`;
+    acc[key] = (acc[key] || 0) + l.totaalPrijs;
     return acc;
   }, {} as Record<string, number>);
+
+  const totaalKosten = totaalSRD + totaalUSD; // Voor de grafiek percentages
 
   const upcomingExpiries = licenses
     .filter((l) => l.status === 'verloopt_soon' || l.status === 'verlopen')
@@ -46,7 +66,17 @@ export default function Dashboard({ licenses }: DashboardProps) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500">Totaal Kosten</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">{formatCurrency(totaalKosten)}</p>
+              <div className="mt-1 space-y-0.5">
+                {totaalSRD > 0 && (
+                  <p className="text-lg font-bold text-green-700">SRD {totaalSRD.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}</p>
+                )}
+                {totaalUSD > 0 && (
+                  <p className="text-lg font-bold text-blue-700">$ {totaalUSD.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                )}
+                {totaalSRD === 0 && totaalUSD === 0 && (
+                  <p className="text-2xl font-bold text-gray-900">-</p>
+                )}
+              </div>
             </div>
             <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
               <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,49 +123,104 @@ export default function Dashboard({ licenses }: DashboardProps) {
         {/* Kosten per Type */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Kosten per Licentietype</h3>
-          <div className="space-y-4">
-            {Object.entries(kostenPerType).map(([type, kosten]) => (
-              <div key={type} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`w-3 h-3 rounded-full ${
-                    type === 'domein' ? 'bg-purple-500' :
-                    type === 'odoo' ? 'bg-blue-500' :
-                    type === 'windows' ? 'bg-cyan-500' :
-                    type === 'office' ? 'bg-orange-500' :
-                    'bg-gray-500'
-                  }`}></div>
-                  <span className="text-sm font-medium text-gray-700 capitalize">{type}</span>
-                </div>
-                <span className="text-sm font-semibold text-gray-900">{formatCurrency(kosten)}</span>
+          
+          {/* SRD Kosten */}
+          {Object.keys(kostenPerTypeSRD).length > 0 && (
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="px-2 py-0.5 rounded text-xs font-bold bg-green-100 text-green-700">SRD</span>
+                <span className="text-sm font-semibold text-gray-700">
+                  Totaal: SRD {totaalSRD.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}
+                </span>
               </div>
-            ))}
-            {Object.keys(kostenPerType).length === 0 && (
-              <p className="text-sm text-gray-400">Geen licenties gevonden</p>
-            )}
-          </div>
-          {/* Bar chart visualization */}
-          <div className="mt-6 space-y-2">
-            {Object.entries(kostenPerType).map(([type, kosten]) => {
-              const percentage = totaalKosten > 0 ? (kosten / totaalKosten) * 100 : 0;
-              return (
-                <div key={type} className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500 w-16 capitalize">{type}</span>
-                  <div className="flex-1 bg-gray-100 rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full ${
+              <div className="space-y-2 pl-1">
+                {Object.entries(kostenPerTypeSRD).map(([type, kosten]) => (
+                  <div key={type} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2.5 h-2.5 rounded-full ${
                         type === 'domein' ? 'bg-purple-500' :
                         type === 'odoo' ? 'bg-blue-500' :
                         type === 'windows' ? 'bg-cyan-500' :
                         type === 'office' ? 'bg-orange-500' :
                         'bg-gray-500'
-                      }`}
-                      style={{ width: `${percentage}%` }}
-                    ></div>
+                      }`}></div>
+                      <span className="text-sm text-gray-600 capitalize">{type}</span>
+                    </div>
+                    <span className="text-sm font-medium text-gray-900">
+                      SRD {kosten.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}
+                    </span>
                   </div>
-                  <span className="text-xs text-gray-500 w-12 text-right">{percentage.toFixed(0)}%</span>
-                </div>
-              );
-            })}
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* USD Kosten */}
+          {Object.keys(kostenPerTypeUSD).length > 0 && (
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="px-2 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-700">USD</span>
+                <span className="text-sm font-semibold text-gray-700">
+                  Totaal: $ {totaalUSD.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+              <div className="space-y-2 pl-1">
+                {Object.entries(kostenPerTypeUSD).map(([type, kosten]) => (
+                  <div key={type} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2.5 h-2.5 rounded-full ${
+                        type === 'domein' ? 'bg-purple-500' :
+                        type === 'odoo' ? 'bg-blue-500' :
+                        type === 'windows' ? 'bg-cyan-500' :
+                        type === 'office' ? 'bg-orange-500' :
+                        'bg-gray-500'
+                      }`}></div>
+                      <span className="text-sm text-gray-600 capitalize">{type}</span>
+                    </div>
+                    <span className="text-sm font-medium text-gray-900">
+                      $ {kosten.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {Object.keys(kostenPerTypeSRD).length === 0 && Object.keys(kostenPerTypeUSD).length === 0 && (
+            <p className="text-sm text-gray-400">Geen licenties gevonden</p>
+          )}
+
+          {/* Bar chart visualization */}
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Verdeling</p>
+            <div className="space-y-2">
+              {Object.entries(kostenPerType).map(([key, kosten]) => {
+                const [type, valuta] = key.split('_');
+                const percentage = (totaalSRD + totaalUSD) > 0 ? (kosten / (totaalSRD + totaalUSD)) * 100 : 0;
+                return (
+                  <div key={key} className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 w-20 truncate capitalize">{type}</span>
+                    <div className="flex-1 bg-gray-100 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full ${
+                          type === 'domein' ? 'bg-purple-500' :
+                          type === 'odoo' ? 'bg-blue-500' :
+                          type === 'windows' ? 'bg-cyan-500' :
+                          type === 'office' ? 'bg-orange-500' :
+                          'bg-gray-500'
+                        }`}
+                        style={{ width: `${Math.max(percentage, 2)}%` }}
+                      ></div>
+                    </div>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                      valuta === 'SRD' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'
+                    }`}>
+                      {valuta}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -152,13 +237,18 @@ export default function Dashboard({ licenses }: DashboardProps) {
                       <p className="text-sm font-medium text-gray-900">{license.naam}</p>
                       <p className="text-xs text-gray-500">{license.klantNaam || 'Geen klant'}</p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right flex flex-col items-end gap-1">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         daysLeft < 0 ? 'bg-red-100 text-red-800' :
                         daysLeft <= 7 ? 'bg-red-100 text-red-800' :
                         'bg-orange-100 text-orange-800'
                       }`}>
                         {daysLeft < 0 ? `${Math.abs(daysLeft)} dagen geleden` : `${daysLeft} dagen`}
+                      </span>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                        license.valuta === 'SRD' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'
+                      }`}>
+                        {formatCurrencyShort(license.totaalPrijs, license.valuta)}
                       </span>
                     </div>
                   </div>

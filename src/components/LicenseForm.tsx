@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { License, LicenseType } from '../types';
+import { License, LicenseType, Currency } from '../types';
 
 interface LicenseFormProps {
   isOpen: boolean;
@@ -15,6 +15,7 @@ export default function LicenseForm({ isOpen, onClose, onSave, license }: Licens
     leverancier: '',
     aantalLicenties: 1,
     prijsPerLicentie: 0,
+    valuta: 'SRD' as Currency,
     aankoopDatum: new Date().toISOString().split('T')[0],
     vervaldatum: '',
     klantNaam: '',
@@ -31,6 +32,7 @@ export default function LicenseForm({ isOpen, onClose, onSave, license }: Licens
         leverancier: license.leverancier,
         aantalLicenties: license.aantalLicenties,
         prijsPerLicentie: license.prijsPerLicentie,
+        valuta: license.valuta || 'SRD',
         aankoopDatum: license.aankoopDatum,
         vervaldatum: license.vervaldatum,
         klantNaam: license.klantNaam || '',
@@ -45,6 +47,7 @@ export default function LicenseForm({ isOpen, onClose, onSave, license }: Licens
         leverancier: '',
         aantalLicenties: 1,
         prijsPerLicentie: 0,
+        valuta: 'SRD',
         aankoopDatum: new Date().toISOString().split('T')[0],
         vervaldatum: '',
         klantNaam: '',
@@ -162,7 +165,36 @@ export default function LicenseForm({ isOpen, onClose, onSave, license }: Licens
           {/* Prijs Informatie */}
           <div>
             <h3 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Prijs Informatie</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Valuta *</label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, valuta: 'SRD' })}
+                    className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium border-2 transition-all ${
+                      formData.valuta === 'SRD'
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    <span className="block text-base font-bold">SRD</span>
+                    <span className="block text-xs opacity-75">Surinaamse Dollar</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, valuta: 'USD' })}
+                    className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium border-2 transition-all ${
+                      formData.valuta === 'USD'
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    <span className="block text-base font-bold">$ USD</span>
+                    <span className="block text-xs opacity-75">US Dollar</span>
+                  </button>
+                </div>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Aantal Licenties</label>
                 <input
@@ -173,21 +205,35 @@ export default function LicenseForm({ isOpen, onClose, onSave, license }: Licens
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Prijs per Licentie (€)</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.prijsPerLicentie}
-                  onChange={(e) => setFormData({ ...formData, prijsPerLicentie: parseFloat(e.target.value) || 0 })}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Prijs per Licentie ({formData.valuta === 'SRD' ? 'SRD' : 'USD $'})
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">
+                    {formData.valuta === 'SRD' ? 'SRD' : '$'}
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.prijsPerLicentie}
+                    onChange={(e) => setFormData({ ...formData, prijsPerLicentie: parseFloat(e.target.value) || 0 })}
+                    className="w-full pl-12 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Totaal Prijs</label>
-                <div className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold text-gray-900">
-                  € {(formData.aantalLicenties * formData.prijsPerLicentie).toFixed(2)}
+                <div className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold text-gray-900 flex items-center gap-2">
+                  <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                    formData.valuta === 'SRD' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                  }`}>
+                    {formData.valuta}
+                  </span>
+                  {(formData.aantalLicenties * formData.prijsPerLicentie).toLocaleString('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               </div>
             </div>
